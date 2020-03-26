@@ -36,7 +36,7 @@ class EmployeeFixtures extends Fixture implements DependentFixtureInterface
             $employee = new Employee();
             $employee->setFirstname($faker->firstName);
             $employee->setLastname($faker->lastName);
-            $employee->setEmployementDate($faker->dateTime($max = 'now', $timezone = null));
+            $employee->setEmployementDate($faker->dateTimeBetween($startDate = '-30 years', $endDate = 'now', $timezone = null));
             $employee->setJob($this->jobRepository->find(rand(1,5)));
             $manager->persist($employee);
         }

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Title</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
+    <link rel="stylesheet"
+          href="https://unpkg.com/bootstrap-material-design@4.1.1/dist/css/bootstrap-material-design.min.css"
+          integrity="sha384-wXznGJNEXNG1NFsbm0ugrLFMQPWswR3lds2VeinahP8N0zJw9VWSopbjv2x7WCvX" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css">
+</head>
+<body>
+
+<div class="container mt-3">
+    <h1>Logiciel de gestion des ressources humaines de BurgerTop</h1>
+    <hr>
+    <div class="row">
+        <div class="col-5">
+            <div class="jumbotron bg-white">
+                <h2>Ajouter un nouvel emploi</h2>
+                <div class="alert alert-primary" role="alert" id="newJobAlertSuccess" style="display:none"></div>
+                <div class="alert alert-danger" role="alert" id="newJobAlertDanger" style="display:none"></div>
+                <form id="jobForm">
+                    <div class="form-group">
+                        <label for="jobFormTitle">Titre</label>
+                        <input id="jobFormTitle" type="text" class="form-control" name="title" placeholder="Assistant comptable">
+                    </div>
+                    <button id="jobFormButton" class="btn-primary float-right btn">Créer l'emploi</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-7">
+            <div class="jumbotron bg-white">
+                <h2>Ajouter un nouvel employé</h2>
+                <div class="alert alert-primary" role="alert" id="newEmployeeAlertSuccess" style="display:none"></div>
+                <div class="alert alert-danger" role="alert" id="newEmployeeAlertDanger" style="display:none"></div>
+                <form id="employeeForm">
+                    <div class="form-group">
+                        <label for="employeeFormLastname">Nom de famille</label>
+                        <input id="employeeFormLastname" type="text" class="form-control" name="lastname" placeholder="Durand">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeFormFirstname">Prénom</label>
+                        <input id="employeeFormFirstname" type="text" class="form-control" name="firstname" placeholder="Emma">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="employeeFormEmployementDate">Date d'embauche</label>
+                        <input id="employeeFormEmployementDate" type="date" class="form-control" name="employement_date">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="employeeFormJobId">Emploi</label>
+                        <select class="form-control" name="job_id" id="employeeFormJobId"></select>
+                    </div>
+
+                    <button id="employeeFormButton" class="btn-primary float-right btn">Créer un employé</button>
+                </form>
+            </div>
+        </div>
+        <div class="col">
+
+            <hr>
+            <p>
+                <button id="showEmployeesButton" class="btn btn-secondary">Afficher les employés</button>
+            <div class="alert alert-primary" role="alert" id="employeeListAlertSuccess" style="display:none"></div>
+            <div class="alert alert-danger" role="alert" id="employeeListAlertDanger" style="display:none"></div>
+
+            <hr>
+
+            <table id="employeesTable" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Ancienneté</th>
+                    <th>Job</th>
+                </tr>
+                </thead>
+                <tbody id="employeeList"></tbody>
+            </table>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div id="modals"></div>
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/bootstrap-material-design@4.1.1/dist/js/bootstrap-material-design.js"
+        integrity="sha384-CauSuKpEqAFajSpkdjv3z9t8E7RlpJ1UP0lKM/+NdtSarroVKu069AlsRPKkFBz9"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+
+<script>
+
+    $(function() {
+        $.get('http://localhost:8000/jobs', res => {
+            $('#employeeFormJobId').html('');
+            $.each(res, function(key, job) {
+                $('#employeeFormJobId').append('<option value="'+ job.id +'">'+ job.title +'</option>');
+            })
+        });
+
+        $('#showEmployeesButton').on('click', function(e) {
+            $.get({
+                url: 'http://localhost:8000/employees'
+            })
+                .done(employeesRes => {
+                    $('#modal').html('');
+                    $('#employeeList').html('');
+                    let string = "La liste des employés a été trouvée :";
+                    $('#employeeListAlertSuccess').html(string).fadeIn(400);
+
+                    let jobs = null;
+                    $.get('http://localhost:8000/jobs', jobRes => {
+                        jobs = jobRes;
+
+                        $.each(employeesRes, function (key, employee) {
+
+                            let jobsOptions = "";
+                            $.each(jobs, function (key, job) {
+                                jobsOptions += '<option value="' + job.id + '" '+ (employee.job.id === job.id ? 'selected' : '') +'>' + job.title + '</option>';
+                            })
+
+                            let dateStringFr = "erreur";
+                            if (typeof (employee.employement_date) !== "undefined") {
+                                let dateTimestamp = Date.parse(employee.employement_date);
+                                let dateObj = new Date(dateTimestamp);
+                                dateStringFr = dateObj.getDate() + "/" + dateObj.getMonth() + "/" + dateObj.getFullYear();
+                                dateStringUs = dateObj.getFullYear() + "-" + (dateObj.getUTCMonth() < 10 ? '0' : '') + dateObj.getUTCMonth() + "-" + (dateObj.getDate() < 10 ? '0' : '') + dateObj.getDate();
+                            }
+
+                            let line = "<tr>" +
+                                "<td>" + (typeof (employee.id) !== "undefined" ? employee.id : null) + " <a href='#' data-toggle='modal' data-target='#modalEmployee-" + employee.id + "'>Infos</a></td>" +
+                                "<td>" + (typeof (employee.lastname) !== "undefined" ? employee.lastname : null) + "</td>" +
+                                "<td>" + (typeof (employee.firstname) !== "undefined" ? employee.firstname : null) + "</td>" +
+                                "<td>" + dateStringFr + "</td>" +
+                                "<td>" + (typeof (employee.job) !== "undefined" ? employee.job.title : null) + "</td>" +
+                                "</tr>";
+
+                            let modal =
+                                '<div class="modal fade" id="modalEmployee-' + employee.id + '" tabindex="-1" role="dialog">' +
+                                '<div class="modal-dialog" role="document">' +
+                                '<div class="modal-content">' +
+                                '<div class="modal-header">' +
+                                '<h5 class="modal-title" id="exampleModalLabel">' +
+                                (typeof (employee.lastname) !== "undefined" ? employee.lastname : null) + ' ' +
+                                (typeof (employee.firstname) !== "undefined" ? employee.firstname : null) +
+                                '</h5>' +
+                                '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+                                '<span aria-hidden="true">&times;</span>' +
+                                '</button>' +
+                                '</div>' +
+                                '<div class="modal-body">' +
+                                '<strong>Employé(e) depuis le : </strong> ' + dateStringFr + ' en qualité de <strong>' + (typeof (employee.job) !== "undefined" ? employee.job.title : null) + '</strong>' +
+                                '<hr>' +
+                                '<form id="employeeForm-' + employee.id + '">' +
+                                '<div class="form-group">' +
+                                '<label for="employeeFormLastname-' + employee.id + '">Nom de famille</label>' +
+                                '<input id="employeeFormLastname-' + employee.id + '" type="text" class="form-control" name="lastname" placeholder="Durand" value="' + (typeof (employee.lastname) !== "undefined" ? employee.lastname : null) + '">' +
+                                '</div>' +
+                                '<div class="form-group">' +
+                                '<label for="employeeFormFirstname-' + employee.id + '">Prénom</label>' +
+                                '<input id="employeeFormFirstname-' + employee.id + '" type="text" class="form-control" name="firstname" placeholder="Emma" value="' + (typeof (employee.firstname) !== "undefined" ? employee.lastname : null) + '">' +
+                                '</div>' +
+                                '<div class="form-group">' +
+                                '<label for="employeeFormEmployementDate-' + employee.id + '">Date d\'embauche</label>' +
+                                '<input id="employeeFormEmployementDate-' + employee.id + '" type="date" class="form-control" name="employement_date" value="' + dateStringUs + '">' +
+                                '</div>' +
+                                '<div class="form-group">' +
+                                '<label for="employeeFormJobId-' + employee.id + '">Emploi</label>' +
+                                '<select class="form-control" name="job_id" id="employeeFormJobId-' + employee.id + '">'+jobsOptions+'</select>' +
+                                '</div>' +
+                                '<button class="employeeEditFormButton btn btn-primary float-right" data-id="' + employee.id + '" class="btn-primary float-right btn">Éditer l\'employé(e)</button>' +
+                                '<button class="employeeDeleteFormButton btn btn-danger float-right" data-id="'+employee.id+'" class="btn-primary float-right btn">Supprimer l\'employé(e)</button>' +
+                                '</form>' +
+                                '</div>' +
+                                '</div>' +
+                                '</div>' +
+                                '</div>';
+
+                            $('#modals').append(modal);
+                            $('#employeeList').append(line);
+
+                            $(function() {
+                                $("#employeesTable").DataTable();
+
+                                $('.employeeEditFormButton').each(function() {
+                                    $(this).on('click', function(e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        e.stopImmediatePropagation();
+
+                                        $.post({
+                                            url: 'http://localhost:8000/employees/' + $(this).data('id'),
+                                            data: {
+                                                lastname: $('#employeeFormLastname-' + $(this).data('id')).val(),
+                                                firstname: $('#employeeFormFirstname-' + $(this).data('id')).val(),
+                                                employement_date: $('#employeeFormEmployementDate-' + $(this).data('id')).val(),
+                                                job_id: $('#employeeFormJobId-' + $(this).data('id')).val()
+                                            }
+                                        })
+
+
+                                    })
+                                })
+
+                                $('.employeeDeleteFormButton').each(function () {
+                                    $(this).on('click', function (e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        e.stopImmediatePropagation();
+
+                                        $.ajax({
+                                            method: "DELETE",
+                                            url: 'http://localhost:8000/employees/' + $(this).data('id'),
+                                            success: function (res) {
+                                                console.log("ok");
+                                            }
+                                        })
+
+
+                                    })
+                                })
+                            })
+
+                        })
+
+
+
+                    });
+
+
+
+                }).fail(res => {
+                let string = "La liste des employés n'a pas pu être retrouvée à cause d'une erreur serveur.";
+                $('#employeeListAlertDanger').html(string).fadeIn(400);
+            });
+
+        })
+
+        $('#jobFormButton').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            $.post({
+                url: 'http://localhost:8000/jobs',
+                data: {
+                    title: $('#jobFormTitle').val()
+                }
+            })
+                .done(res => {
+
+                    let string = "L'emploi <strong>" + $('#jobFormTitle').val() + "</strong> vient d'être créé ! Veuillez actualiser la page pour voir le nouveau job dans le select.";
+                    if (typeof res.id !== "undefined") {
+                        let option = '<option value="'+res.id+'">'+res.title+'</option>';
+                        $('#employeeFormJobId').append(option);
+                        string = "L'emploi <strong>" + $('#jobFormTitle').val() + "</strong> vient d'être créé !";
+                    }
+
+
+                    $('#newJobAlertSuccess').html(string).fadeIn(400);
+                }).fail(res => {
+                let string = "L'emploi <strong>" + $('#jobFormTitle').val() + "</strong> n'a pas pu être créé à cause d'une erreur serveur.";
+
+                $('#newJobAlertDanger').html(string).fadeIn(400);
+            })
+        });
+
+        $('#employeeFormButton').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            $.post({
+                url: 'http://localhost:8000/employees',
+                data: {
+                    lastname: $('#employeeFormLastname').val(),
+                    firstname: $('#employeeFormFirstname').val(),
+                    employement_date: $('#employeeFormEmployementDate').val(),
+                    job_id: $('#employeeFormJobId').val()
+                }
+            }).done(res => {
+                let string = "L'employé <strong>" + $('#employeeFormLastname').val() + " " + $('#employeeFormFirstname').val() + "</strong> a bien été crtéé.";
+                $('#newEmployeeAlertSuccess').html(string).fadeIn(400);
+            }).fail(res => {
+                let string = "L'employé <strong>" + $('#employeeFormLastname').val() + " " + $('#employeeFormFirstname').val() + "</strong> n'a pas pu être créé à cause d'une erreur serveur.";
+
+                $('#newEmployeeAlertDanger').html(string).fadeIn(400);
+            })
+        });
+    });
+</script>
+</body>
+</html>

@@ -34,7 +34,7 @@ class Employee
      * @Groups({"employees", "jobs"})
      * @ORM\Column(type="date")
      */
-    private $employementDate;
+    private $employement_date;
 
     /**
      * @Groups({"employees"})
@@ -72,14 +72,14 @@ class Employee
         return $this;
     }
 
-    public function getEmployementDate(): ?\DateTimeInterface
+    public function getEmployementDate(): string
     {
-        return $this->employementDate;
+        return date_format($this->employement_date,'Y-m-d');
     }
 
     public function setEmployementDate(\DateTimeInterface $employementDate): self
     {
-        $this->employementDate = $employementDate;
+        $this->employement_date = $employementDate;
 
         return $this;
     }
