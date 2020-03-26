@@ -5,6 +5,7 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\JobRepository")
@@ -12,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Job
 {
     /**
+     * @Groups({"jobs","job", "employees"})
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
@@ -19,11 +21,13 @@ class Job
     private $id;
 
     /**
+     * @Groups({"jobs", "job","employees"})
      * @ORM\Column(type="string", length=255)
      */
     private $title;
 
     /**
+     * @Groups({"jobs"})
      * @ORM\OneToMany(targetEntity="App\Entity\Employee", mappedBy="job", orphanRemoval=true)
      */
     private $employees;
